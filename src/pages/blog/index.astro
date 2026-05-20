@@ -1,0 +1,51 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import {
+    getPosts,
+    getCategories,
+    getPostsByCategory,
+} from "../../lib/wordpress";
+
+const page = Number(Astro.url.searchParams.get("page") ?? 1);
+const categoryId = Astro.url.searchParams.get("category");
+
+const [posts, categories] = await Promise.all([
+    categoryId ? getPostsByCategory(categoryId, page) : getPosts(page, 10),
+    getCategories(),
+]);
+---
+
+<Layout title="Blog">
+    <nav>
+        <a href="/blog">All</a>
+        {
+            categories.map((cat) => (
+                <a href={`/blog?category=${cat.id}`}>{cat.name}</a>
+            ))
+        }
+    </nav>
+
+    <ul>
+        {
+            posts.map((post) => {
+                const image =
+                    post._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
+                const imageAlt =
+                    post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ?? "";
+                return (
+                    <li>
+                        {image && <img src={image} alt={imageAlt} />}
+                        <a
+                            href={`/blog/${post.slug}`}
+                            set:html={post.title.rendered}
+                        />
+                        <div set:html={post.excerpt.rendered} />
+                    </li>
+                );
+            })
+        }
+    </ul>
+
+    {page > 1 && <a href={`/blog?page=${page - 1}`}>Previous</a>}
+    <a href={`/blog?page=${page + 1}`}>Next</a>
+</Layout>

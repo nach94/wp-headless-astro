@@ -1,25 +1,26 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import {
-    getPosts,
-    getCategories,
-    getPostsByCategory,
-} from "../../lib/wordpress";
+import { getCollection, getCategories } from "../../lib/wordpress";
 
 const page = Number(Astro.url.searchParams.get("page") ?? 1);
 const categoryId = Astro.url.searchParams.get("category");
 
 const [posts, categories] = await Promise.all([
-    categoryId ? getPostsByCategory(categoryId, page) : getPosts(page, 10),
+    getCollection("posts", { page, perPage: 10, categories: categoryId }),
     getCategories(),
 ]);
+
+const seoTitle = categoryId 
+    ? `Blog - ${categories.find((c: any) => c.id == categoryId)?.name || 'Categoría'}`
+    : "Blog - Listado de artículos";
+const seoDesc = "Explora nuestros últimos artículos sobre WordPress y Astro.js";
 ---
 
-<Layout title="Blog">
+<Layout title={seoTitle} description={seoDesc}>
     <nav>
-        <a href="/blog">All</a>
+        <a href="/blog">Todos</a>
         {
-            categories.map((cat) => (
+            categories.map((cat: any, index: number) => (
                 <a href={`/blog?category=${cat.id}`}>{cat.name}</a>
             ))
         }
@@ -27,18 +28,12 @@ const [posts, categories] = await Promise.all([
 
     <ul>
         {
-            posts.map((post) => {
-                const image =
-                    post._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
-                const imageAlt =
-                    post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ?? "";
+            posts.map((post: any, index: number) => {
+                const image = post._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
                 return (
                     <li>
-                        {image && <img src={image} alt={imageAlt} />}
-                        <a
-                            href={`/blog/${post.slug}`}
-                            set:html={post.title.rendered}
-                        />
+                        {image && <img src={image} alt={post.title.rendered} />}
+                        <a href={`/blog/${post.slug}`} set:html={post.title.rendered} />
                         <div set:html={post.excerpt.rendered} />
                     </li>
                 );
@@ -46,6 +41,8 @@ const [posts, categories] = await Promise.all([
         }
     </ul>
 
-    {page > 1 && <a href={`/blog?page=${page - 1}`}>Previous</a>}
-    <a href={`/blog?page=${page + 1}`}>Next</a>
+    <nav>
+        {page > 1 && <a href={`/blog?page=${page - 1}`}>Anterior</a>}
+        <a href={`/blog?page=${page + 1}`}>Siguiente</a>
+    </nav>
 </Layout>

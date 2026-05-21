@@ -1,0 +1,30 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getSingleBySlug, getAllForPaths } from "../lib/wordpress";
+
+export async function getStaticPaths() {
+    const items = await getAllForPaths("pages");
+    return items.map((p) => ({ params: { slug: p.slug } }));
+}
+
+const { slug } = Astro.params;
+const item = await getSingleBySlug("pages", slug);
+if (!item) return Astro.redirect("/404");
+
+const image = item._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
+const seoTitle = item.title.rendered;
+const seoDesc = item.excerpt?.rendered || "";
+---
+
+<Layout 
+    title={seoTitle} 
+    description={seoDesc} 
+    image={image}
+    type="website"
+>
+    <article>
+        <h1 set:html={item.title.rendered} />
+        {image && <img src={image} alt={item.title.rendered} />}
+        <div set:html={item.content.rendered} />
+    </article>
+</Layout>

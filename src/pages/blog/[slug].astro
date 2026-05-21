@@ -1,29 +1,30 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import { getPostBySlug, getAllPostsForSitemap } from "../../lib/wordpress";
+import { getSingleBySlug, getAllForPaths } from "../../lib/wordpress";
 
 export async function getStaticPaths() {
-    /** @type {{ slug: string }[]} */
-    const posts = await getAllPostsForSitemap();
-    return posts.map((p: { slug: string }) => ({ params: { slug: p.slug } }));
+    const posts = await getAllForPaths("posts");
+    return posts.map((p: any, index: number) => ({ params: { slug: p.slug } }));
 }
 
 const { slug } = Astro.params;
-const post = await getPostBySlug(slug);
+const post = await getSingleBySlug("posts", slug);
 if (!post) return Astro.redirect("/404");
 
 const image = post._embedded?.["wp:featuredmedia"]?.[0]?.source_url;
-const imageAlt = post._embedded?.["wp:featuredmedia"]?.[0]?.alt_text ?? "";
-const author = post._embedded?.author?.[0]?.name;
-const seoTitle = post.yoast_head_json?.title ?? post.title.rendered;
-const seoDesc = post.yoast_head_json?.og_description ?? "";
+const seoTitle = post.title.rendered;
+const seoDesc = post.excerpt.rendered;
 ---
 
-<Layout title={seoTitle} description={seoDesc}>
+<Layout 
+    title={seoTitle} 
+    description={seoDesc} 
+    image={image}
+    type="article"
+>
     <article>
         <h1 set:html={post.title.rendered} />
-        <p>{author} · {new Date(post.date).toLocaleDateString()}</p>
-        {image && <img src={image} alt={imageAlt} />}
+        {image && <img src={image} alt={post.title.rendered} />}
         <div set:html={post.content.rendered} />
     </article>
 </Layout>

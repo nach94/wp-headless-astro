@@ -1,22 +1,59 @@
 ---
+import "../styles/global.css";
+
 interface Props {
 	title: string;
 	description?: string;
+	image?: string;
+	canonical?: string;
+	type?: string;
 }
-const { title, description = "" } = Astro.props;
+
+const { 
+	title, 
+	description = "", 
+	image = "/favicon.svg", 
+	canonical = Astro.url.href,
+	type = "website"
+} = Astro.props;
+
+// Limpiar HTML de títulos y descripciones si vienen de WordPress
+const cleanTitle = title.replace(/<\/?[^>]+(>|$)/g, "");
+const cleanDescription = description.replace(/<\/?[^>]+(>|$)/g, "").substring(0, 160);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="es">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>{title}</title>
-		<meta name="description" content={description} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="canonical" href={canonical} />
+		
+		<!-- SEO Primario -->
+		<title>{cleanTitle}</title>
+		<meta name="title" content={cleanTitle} />
+		<meta name="description" content={cleanDescription} />
+
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content={type} />
+		<meta property="og:url" content={Astro.url.href} />
+		<meta property="og:title" content={cleanTitle} />
+		<meta property="og:description" content={cleanDescription} />
+		{image && <meta property="og:image" content={image} />}
+
+		<!-- Twitter -->
+		<meta property="twitter:card" content="summary_large_image" />
+		<meta property="twitter:url" content={Astro.url.href} />
+		<meta property="twitter:title" content={cleanTitle} />
+		<meta property="twitter:description" content={cleanDescription} />
+		{image && <meta property="twitter:image" content={image} />}
 	</head>
 	<body>
 		<slot name="nav" />
-		<main id="main-content"><slot /></main>
+		<main id="main-content">
+			<slot />
+		</main>
 		<slot name="footer" />
 	</body>
 </html>
